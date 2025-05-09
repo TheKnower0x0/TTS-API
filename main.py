@@ -1,12 +1,16 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-from PIL import Image
-from utils.ocr_utils import extract_arabic_text
-from utils.language_utils import LanguageModelUtils
-from utils.tts_utils import text_to_speech_arabic
 import io
+import os
+from contextlib import asynccontextmanager
+
+from PIL import Image
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, FileResponse
+
+from utils.language_utils import LanguageModel
+from utils.ocr_utils import OCR
+from utils.tts_utils import text_to_speech_arabic
+from dotenv import load_dotenv
 
 
 @asynccontextmanager
@@ -30,12 +34,16 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# Load the language model once at application startup
-model_name = "unsloth/Llama-3.2-1B-bnb-4bit"
-language_model_utils = LanguageModelUtils(model_name=model_name)
+# Load environment variables
+load_dotenv()
+
+# Load Models
+print("Loading models...")
+language = LanguageModel(model_name=os.getenv("LANGUAGE_MODEL"))
+ocr = OCR(model_name=os.getenv("OCR_MODEL"), max_tokens=int(os.getenv("MAX_TOKENS")))
+print("Models loaded successfully.")
 
 
-# Endpoint to check the health of the API
 @app.get("/")
 async def health_check():
     """
@@ -49,7 +57,7 @@ async def health_check():
 
 # Endpoint to extract Arabic text from an uploaded image
 @app.post("/ocr")
-async def extract_text(file: UploadFile = File(...), lang: str = Form("ara")):
+async def extract_text(file: UploadFile = File(...)):
     """
     Extract Arabic text from an uploaded image.
 
@@ -63,8 +71,15 @@ async def extract_text(file: UploadFile = File(...), lang: str = Form("ara")):
     try:
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes))
-        arabic_text = extract_arabic_text(image, lang=lang)
-        return JSONResponse({"extracted_text": arabic_text})
+        extracted_text = ocr.extract_text(image)
+        prompt = f"""Analyze the extracted text and summarize its key points.
+            ### Input:
+            {extracted_text}
+            
+            ### Response:
+            """
+        # result = language.generate_response(prompt)
+        return JSONResponse({"extracted_text": extracted_text})
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
@@ -82,7 +97,7 @@ async def generate_response(text: str = Form(...)):
         JSONResponse: Generated response or an error message.
     """
     try:
-        result = language_model_utils.generate_response(text)
+        result = language.generate_response(text)
         return JSONResponse(result)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)

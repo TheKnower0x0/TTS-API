@@ -1,10 +1,10 @@
 import unsloth
-from transformers import AutoTokenizer
 from unsloth import FastLanguageModel
+from transformers import AutoTokenizer
 import time
 
 
-class LanguageModelUtils:
+class LanguageModel:
     """
     Utility class for interacting with the LLaMA language model.
     """
@@ -17,8 +17,7 @@ class LanguageModelUtils:
             model_name (str): The name of the pre-trained model.
             max_seq_length (int): The maximum sequence length for inputs.
         """
-        print("Loading LLaMA model...")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=model_name,
             max_seq_length=max_seq_length,
@@ -26,7 +25,6 @@ class LanguageModelUtils:
             dtype=None,
         )
         self.model = FastLanguageModel.for_inference(model)
-        print("Model loaded successfully.")
 
     def generate_response(self, text: str, max_length: int = 500) -> dict:
         """
