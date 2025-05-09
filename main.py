@@ -7,7 +7,6 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 
-from utils.language_utils import LanguageModel
 from utils.ocr_utils import OCR
 from utils.tts_utils import text_to_speech_arabic
 from dotenv import load_dotenv
@@ -39,7 +38,6 @@ load_dotenv()
 
 # Load Models
 print("Loading models...")
-language = LanguageModel(model_name=os.getenv("LANGUAGE_MODEL"))
 ocr = OCR(model_name=os.getenv("OCR_MODEL"), max_tokens=int(os.getenv("MAX_TOKENS")))
 print("Models loaded successfully.")
 
@@ -80,25 +78,6 @@ async def extract_text(file: UploadFile = File(...)):
             """
         # result = language.generate_response(prompt)
         return JSONResponse({"extracted_text": extracted_text})
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
-
-
-# Endpoint to generate a response using the LLaMA language model
-@app.post("/respond")
-async def generate_response(text: str = Form(...)):
-    """
-    Generate a response from the LLaMA language model.
-
-    Args:
-        text (str): The input text for the model.
-
-    Returns:
-        JSONResponse: Generated response or an error message.
-    """
-    try:
-        result = language.generate_response(text)
-        return JSONResponse(result)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 

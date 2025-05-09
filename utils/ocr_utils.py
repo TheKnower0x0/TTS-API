@@ -33,7 +33,7 @@ class OCR:
             torch_dtype="auto",
             device_map="auto"
         )
-        self.processor = AutoProcessor.from_pretrained(model_name)
+        self.processor = AutoProcessor.from_pretrained(model_name, use_fast=True)
 
     def extract_text(self, image: Image.Image) -> str:
         """
