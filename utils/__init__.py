@@ -1,2 +1,2 @@
 from .ocr_utils import OCR
-from .tts_utils import text_to_speech_arabic
+from .tts_utils import TTS

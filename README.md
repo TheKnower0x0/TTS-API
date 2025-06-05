@@ -3,8 +3,7 @@
 ## Overview
 This project provides a FastAPI-based backend for performing the following tasks:
 1. **OCR (Optical Character Recognition)**: Extract Arabic text from images.
-2. **Language Model Response Generation**: Generate responses using the LLaMA language model.
-3. **Text-to-Speech (TTS)**: Convert text to speech and return an audio file.
+2. **Text-to-Speech (TTS)**: Convert text to speech and return an audio file.
 
 ## Endpoints
 
@@ -23,7 +22,7 @@ This project provides a FastAPI-based backend for performing the following tasks
 - **Description**: Convert text to speech and return an audio file.
 - **Request**:
   - `text` (form-data): Text to convert to speech.
-  - `lang` (form-data, optional): Language code (default: `ar`).
+  - `voice` (form-data, optional): Voice name (default: `Aisha`).
 - **Response**:
   - Audio file in MP3 format.
 

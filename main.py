@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 
 from utils.ocr_utils import OCR
-from utils.tts_utils import text_to_speech_arabic
+from utils.tts_utils import TTS
 from dotenv import load_dotenv
 
 
@@ -38,7 +38,10 @@ load_dotenv()
 
 # Load Models
 print("Loading models...")
-ocr = OCR(model_name=os.getenv("OCR_MODEL"), max_tokens=int(os.getenv("MAX_TOKENS")))
+ocr = OCR(model_name=os.getenv("BASE_OCR_MODEL"), adapter=os.getenv("ADAPTER_OCR_MODEL"),
+          max_tokens=int(os.getenv("MAX_TOKENS")))
+
+tts = TTS(api_key=os.getenv("ELEVENLABS_API_KEY"))
 print("Models loaded successfully.")
 
 
@@ -70,13 +73,6 @@ async def extract_text(file: UploadFile = File(...)):
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes))
         extracted_text = ocr.extract_text(image)
-        prompt = f"""Analyze the extracted text and summarize its key points.
-            ### Input:
-            {extracted_text}
-            
-            ### Response:
-            """
-        # result = language.generate_response(prompt)
         return JSONResponse({"extracted_text": extracted_text})
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
@@ -84,19 +80,20 @@ async def extract_text(file: UploadFile = File(...)):
 
 # Endpoint to convert text to speech and return an audio file
 @app.post("/tts")
-async def text_to_speech(text: str = Form(...), lang: str = Form("ar")):
+async def text_to_speech(text: str = Form(...), voice: str = Form("Aisha")):
     """
     Convert text to speech and return the audio file.
 
     Args:
         text (str): The text to convert to speech.
-        lang (str): The language code for TTS (default is 'ar').
+        voice (str): The language code for TTS (default is 'ar').
 
     Returns:
         FileResponse: The generated audio file or an error message.
     """
     try:
-        audio_file_path = text_to_speech_arabic(text, lang=lang)
+        audio_file_path = tts.text_to_speech(text=text, voice=voice)
         return FileResponse(audio_file_path, media_type="audio/mpeg", filename="output.mp3")
     except Exception as e:
+        print(f"Error in TTS: {e}")
         return JSONResponse(content={"error": str(e)}, status_code=500)
